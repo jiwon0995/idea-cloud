@@ -1,7 +1,13 @@
+import { BrowserRouter as Router } from "react-router-dom";
+import AppRouter from "./routes";
+import Providers from "./providers";
+
 export default function App() {
-    return (
-        <h1>
-            Hello! Idea Cloud
-        </h1>
-    )
+  return (
+    <Providers>
+      <Router>
+        <AppRouter />
+      </Router>
+    </Providers>
+  );
 }
