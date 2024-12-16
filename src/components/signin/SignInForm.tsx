@@ -1,12 +1,15 @@
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
+
+import useSession from "@/hook/auth/useSession";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -15,20 +18,48 @@ const formSchema = z.object({
   password: z.string().min(8, { message: "비밀번호는 최소 8자 이상이어야 합니다." }),
 });
 
-export default function LoginForm() {
+export default function SignInForm() {
+  const navigate = useNavigate();
   const [isShowPassword, isSetShowPassword] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const { mutate: sessionMutate } = useSession();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
       password: "",
     },
+    mode: "onChange",
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const loginWithEmail = async (email: string, password: string) => {
+    sessionMutate(
+      { email, password },
+      {
+        onSuccess: async (data) => {
+          navigate("/home");
+        },
+        onError: (error) => {
+          // @ts-ignore
+          if (error.code === "ERR_BAD_REQUEST") {
+            form.setError("email", { type: "manual", message: "이메일 혹은 비밀번호를 확인해주세요." });
+          }
+        },
+        onSettled: () => {
+          setIsSubmitting(false);
+        },
+      }
+    );
+  };
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
+
     const password = values.password.trim();
-    console.log("Submit", values, password);
-    // todo: login api 연결
+    const email = values.email.trim();
+
+    await loginWithEmail(email, password);
   };
 
   return (
@@ -69,7 +100,7 @@ export default function LoginForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" disabled={!form.formState.isValid || isSubmitting}>
           Login
         </Button>
       </form>
