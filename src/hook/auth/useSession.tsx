@@ -6,9 +6,9 @@ export default function useSession() {
     mutationFn: async ({ email, password }: { email: string; password: string }): Promise<string> => {
       const response = await sessionApi(email, password);
 
-      localStorage.setItem("token", response.data);
+      localStorage.setItem("token", response.accessToken);
 
-      return response.data;
+      return response.accessToken;
     },
   });
 }
